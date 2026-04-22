@@ -1,9 +1,13 @@
-use serenity::all::{CommandInteraction, CreateInteractionResponse, CreateInteractionResponseMessage, Message};
+use serenity::all::{CommandInteraction, CreateCommand, CreateInteractionResponse, CreateInteractionResponseMessage, Message};
 use serenity::builder::CreateMessage;
 use serenity::prelude::*;
 use crate::ui::embeds;
 
-pub async fn run_slash_ping(ctx: Context, command: CommandInteraction) {
+pub fn register_ping() -> CreateCommand {
+    CreateCommand::new("ping").description("Muestra el estado del sistema")
+}
+
+pub async fn run_slash_ping(ctx: &Context, command: &CommandInteraction) {
     let embed = embeds::info_embed();
     let data = CreateInteractionResponseMessage::new().add_embed(embed);
     let builder = CreateInteractionResponse::Message(data);
@@ -13,7 +17,7 @@ pub async fn run_slash_ping(ctx: Context, command: CommandInteraction) {
     }
 }
 
-pub async fn run_manual_ping(ctx: Context, msg: Message) {
+pub async fn run_manual_ping(ctx: &Context, msg: &Message) {
     let embed = embeds::info_embed();
     let builder = CreateMessage::new().add_embed(embed);
 

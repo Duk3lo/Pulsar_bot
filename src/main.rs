@@ -5,6 +5,7 @@ mod handlers;
 use std::env;
 use dotenvy::dotenv;
 use serenity::prelude::*;
+use songbird::SerenityInit;
 
 #[tokio::main]
 async fn main() {
@@ -14,10 +15,12 @@ async fn main() {
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT
-        | GatewayIntents::GUILD_MEMBERS;
+        | GatewayIntents::GUILD_MEMBERS
+        | GatewayIntents::GUILD_VOICE_STATES;
 
     let mut client = Client::builder(&token, intents)
         .event_handler(handlers::Handler)
+        .register_songbird()
         .await
         .expect("Error creando el cliente");
 
