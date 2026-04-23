@@ -1,5 +1,7 @@
 use serenity::all::{CommandInteraction, Context, CreateCommand};
-use songbird::input::File;
+//use songbird::input::File;
+
+use crate::workspace::paths::Workspace;
 
 pub fn register_join() -> CreateCommand {
     CreateCommand::new("join").description("El bot se une a tu canal de voz")
@@ -22,17 +24,14 @@ pub async fn run_join_and_play(ctx: &Context, command: &CommandInteraction) {
         }
     };
     let manager = songbird::get(ctx).await.expect("Songbird no inicializado").clone();
-    if let Ok(handler_lock) = manager.join(guild_id, connect_to).await {
-        let mut handler = handler_lock.lock().await;
+    //if let Ok(handler_lock) = manager.join(guild_id, connect_to).await {//let mut handler = handler_lock.lock().await; }
 
-
-        let source = File::new("sonido.wav");
-        handler.play_input(source.into());
-        let _ = command.create_response(&ctx.http,
-            serenity::all::CreateInteractionResponse::Message(
-                serenity::all::CreateInteractionResponseMessage::new().content("🔊 ¡Reproduciendo audio!")
-            )
-        ).await;
-    }
+    let ws = Workspace::global();
+        let audio_file = ws.get_audio_file();
+        if let Some(audio_path) = audio_file {
+            print!("Reproduciendo audio desde: {:?}", audio_path);
+        }else {
+            print!("Archivo de audio no encontrado en: {:?}", ws.folder_audio);
+        }
 }
 
