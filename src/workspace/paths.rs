@@ -1,7 +1,15 @@
 use std::fs;
-use std::sync::OnceLock;
+use std::path::PathBuf;
 
-const local_dir : &str = "workspace";
+const APP_DIR: &str = "mi_app";
+const AUDIO_DIR: &str = "audio";
+const AUDIO_FILE: &str = "generated.wav";
 
-const Config : OnceLock<Workspace> = OnceLock::new();
+struct Workspace {
+    path_app: PathBuf,
+    folder_audio: PathBuf,
+}
 
+impl Workspace {
+
+}

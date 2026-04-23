@@ -24,6 +24,8 @@ pub async fn run_join_and_play(ctx: &Context, command: &CommandInteraction) {
     let manager = songbird::get(ctx).await.expect("Songbird no inicializado").clone();
     if let Ok(handler_lock) = manager.join(guild_id, connect_to).await {
         let mut handler = handler_lock.lock().await;
+
+
         let source = File::new("sonido.wav");
         handler.play_input(source.into());
         let _ = command.create_response(&ctx.http,
@@ -33,3 +35,4 @@ pub async fn run_join_and_play(ctx: &Context, command: &CommandInteraction) {
         ).await;
     }
 }
+
