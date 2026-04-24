@@ -1,3 +1,4 @@
+use std::env;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -20,7 +21,9 @@ impl Workspace {
     }
 
     pub fn load_workspace() -> io::Result<Self> {
-        let path_app = PathBuf::from(APP_DIR);
+        let exe_path = env::current_exe()?;
+        let exe_dir = exe_path.parent().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No se pudo obtener el directorio del ejecutable"))?;
+        let path_app = exe_dir.join(APP_DIR);
         let folder_audio = path_app.join(AUDIO_DIR);
         fs::create_dir_all(&folder_audio)?;
         println!("Workspace verificado en: {:?}", path_app);

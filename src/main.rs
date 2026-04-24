@@ -21,10 +21,7 @@ async fn main() {
         }
     };
 
-    if let Err(_) = WORKSPACE.set(workspace) {
-        eprintln!("Error: El Workspace ya estaba inicializado.");
-        return;
-    }
+    WORKSPACE.get_or_init(|| workspace);
 
     println!("Directorio de audio verificado en: {:?}", paths::Workspace::global().folder_audio);
 
