@@ -16,9 +16,6 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn global() -> &'static Workspace {
-        WORKSPACE.get().expect("Workspace no ha sido inicializado")
-    }
 
     pub fn load_workspace() -> io::Result<Self> {
         let exe_path = env::current_exe()?;

@@ -3,7 +3,10 @@ pub mod handlers;
 pub mod ui;
 pub mod workspace;
 
-use crate::{handlers::handler, workspace::paths::{self, WORKSPACE}};
+use crate::{
+    handlers::handler,
+    workspace::paths::{self, WORKSPACE},
+};
 use dotenvy::dotenv;
 use serenity::prelude::*;
 use songbird::SerenityInit;
@@ -12,7 +15,9 @@ use std::env;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
     let token = env::var("DISCORD_TOKEN").expect("Token no encontrado");
+
     let workspace = match paths::Workspace::load_workspace() {
         Ok(ws) => ws,
         Err(e) => {
@@ -23,9 +28,13 @@ async fn main() {
 
     WORKSPACE.get_or_init(|| workspace);
 
-    println!("Directorio de audio verificado en: {:?}", paths::Workspace::global().folder_audio);
+    println!(
+        "Directorio de audio verificado en: {:?}",
+        WORKSPACE.get().unwrap().folder_audio
+    );
 
-    let intents = GatewayIntents::GUILD_MESSAGES
+    let intents = GatewayIntents::GUILDS
+        | GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::GUILD_MEMBERS

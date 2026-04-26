@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-serenity = "0.12"
+serenity = { version = "0.12", features = ["client", "gateway", "model", "cache", "rustls_backend"] }
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 dotenvy = "0.15"
-songbird = "0.4"
+songbird = { version = "0.6", features = ["serenity", "gateway", "builtin-queue"] }
+symphonia = { version = "0.5", features = ["aac", "mp3", "isomp4", "alac"] }
