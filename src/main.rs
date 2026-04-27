@@ -2,6 +2,8 @@ pub mod commands;
 pub mod handlers;
 pub mod ui;
 pub mod workspace;
+pub mod task;
+pub mod status;
 
 use crate::{
     handlers::handler,
@@ -15,9 +17,7 @@ use std::env;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-
     let token = env::var("DISCORD_TOKEN").expect("Token no encontrado");
-
     let workspace = match paths::Workspace::load_workspace() {
         Ok(ws) => ws,
         Err(e) => {

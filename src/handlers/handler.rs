@@ -1,4 +1,5 @@
 use crate::commands;
+
 use crate::handlers::welcome;
 use serenity::all::{Command, Ready};
 use serenity::async_trait;
@@ -31,9 +32,9 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content.to_lowercase() == "!ping" {
+        if msg.content.to_lowercase() == "!status" {
             task::spawn(async move {
-                commands::utils::run_manual_ping(&ctx, &msg).await;
+                commands::status::run_manual_status(&ctx, &msg).await;
             });
         }
     }

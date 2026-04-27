@@ -9,3 +9,4 @@ tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 dotenvy = "0.15"
 songbird = { version = "0.6", features = ["serenity", "gateway", "builtin-queue"] }
 symphonia = { version = "0.5", features = ["aac", "mp3", "isomp4", "alac"] }
+sysinfo = "0.30"
