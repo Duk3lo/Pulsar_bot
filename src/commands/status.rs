@@ -1,61 +1,45 @@
 use std::time::Duration;
 
 use serenity::all::{
-    CommandDataOptionValue, CommandInteraction, CommandOptionType, CreateCommand,
-    CreateCommandOption, CreateInteractionResponse, CreateInteractionResponseMessage,
-    InstallationContext, InteractionContext, Message,
+    CommandInteraction, Context, CreateCommand, CreateInteractionResponse,
+    CreateInteractionResponseMessage, Message,
 };
 use serenity::builder::CreateMessage;
-use serenity::prelude::*;
 
-use crate::status::metrics::collect_status;
-use crate::{task::status, ui::embeds};
+use crate::commands::shared::opt_bool;
+use crate::{
+    commands::shared::register_live_command,
+    status::metrics::collect_status,
+    task::embed_updater::{self as live_status, LiveEmbedRenderer},
+    ui::embeds,
+};
 
-pub fn register_status() -> CreateCommand {
-    CreateCommand::new("status")
-        .description("Muestra información sobre el bot")
-        .integration_types(vec![
-            InstallationContext::Guild,
-            InstallationContext::User,
-        ])
-        .contexts(vec![
-            InteractionContext::Guild,
-            InteractionContext::BotDm,
-            InteractionContext::PrivateChannel,
-        ])
-        .add_option(
-            CreateCommandOption::new(
-                CommandOptionType::Boolean,
-                "update",
-                "Inicia la actualización automática del embed",
-            )
-            .required(false),
-        )
-        .add_option(
-            CreateCommandOption::new(
-                CommandOptionType::Boolean,
-                "stop",
-                "Detiene la actualización activa",
-            )
-            .required(false),
-        )
+pub struct StatusRenderer;
+
+impl LiveEmbedRenderer for StatusRenderer {
+    fn render(&self, frame: &str) -> serenity::builder::CreateEmbed {
+        let status = collect_status();
+        embeds::info_embed(frame, &status)
+    }
 }
 
-fn opt_bool(command: &CommandInteraction, name: &str) -> bool {
-    command
-        .data
-        .options
-        .iter()
-        .any(|opt| opt.name == name && matches!(opt.value, CommandDataOptionValue::Boolean(true)))
+const SPINNER_FRAMES: [&str; 4] = ["/", "-", "\\", "|"];
+
+fn spinner_frames() -> Vec<String> {
+    SPINNER_FRAMES.iter().map(|s| s.to_string()).collect()
+}
+
+pub fn register_status() -> CreateCommand {
+    register_live_command("status", "Muestra información sobre el bot")
 }
 
 pub async fn run_slash_status(ctx: &Context, command: &CommandInteraction) {
-    let scope = status::StatusScope::from_command(command);
+    let scope = live_status::LiveScope::from_command(command);
     let stop = opt_bool(command, "stop");
     let update = opt_bool(command, "update");
 
     if stop {
-        let stopped = status::stop_status(scope).await;
+        let stopped = live_status::stop(scope).await;
 
         let content = if stopped {
             "Actualización detenida."
@@ -72,8 +56,8 @@ pub async fn run_slash_status(ctx: &Context, command: &CommandInteraction) {
         return;
     }
 
-    let status = collect_status();
-    let embed = embeds::info_embed("", &status);
+    let renderer = StatusRenderer;
+    let embed = renderer.render(SPINNER_FRAMES[0]);
     let data = CreateInteractionResponseMessage::new().add_embed(embed);
     let builder = CreateInteractionResponse::Message(data);
 
@@ -83,12 +67,14 @@ pub async fn run_slash_status(ctx: &Context, command: &CommandInteraction) {
     }
 
     if update {
-        if let Err(err) = status::start_interaction_updater(
+        if let Err(err) = live_status::start(
             ctx.clone(),
             scope,
             command.user.id,
             command.token.clone(),
             Duration::from_secs(2),
+            spinner_frames(),
+            StatusRenderer,
         )
         .await
         {
