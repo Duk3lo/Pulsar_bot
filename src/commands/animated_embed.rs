@@ -18,7 +18,7 @@ pub struct AnimatedRenderer;
 impl LiveEmbedRenderer for AnimatedRenderer {
     fn render(&self, frame: &str) -> CreateEmbed {
         CreateEmbed::new()
-            .title("Animación normal")
+            .title("Uffas")
             .description(format!("```\n{frame}\n```"))
     }
 }

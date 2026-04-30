@@ -22,7 +22,7 @@ pub async fn run_live_stop(ctx: &Context, command: &CommandInteraction) {
         "No había una actualización activa."
     };
 
-    let data = CreateInteractionResponseMessage::new().content(content);
+    let data = CreateInteractionResponseMessage::new().content(content).ephemeral(true);
     let builder = CreateInteractionResponse::Message(data);
 
     if let Err(err) = command.create_response(&ctx.http, builder).await {
