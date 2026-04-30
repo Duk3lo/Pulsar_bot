@@ -6,18 +6,18 @@ use songbird::input::File;
 
 use crate::workspace::paths::WORKSPACE;
 
-pub fn register_join() -> CreateCommand {
-    CreateCommand::new("join")
+pub fn register_join(name: &str) -> CreateCommand {
+    CreateCommand::new(name)
         .description("El bot se une a tu canal de voz y reproduce un audio")
 }
 
-pub fn register_stop() -> CreateCommand {
-    CreateCommand::new("stop")
+pub fn register_stop(name: &str) -> CreateCommand {
+    CreateCommand::new(name)
         .description("Detiene la reproducción y limpia la cola")
 }
 
-pub fn register_leave() -> CreateCommand {
-    CreateCommand::new("leave")
+pub fn register_leave(name: &str) -> CreateCommand {
+    CreateCommand::new(name)
         .description("Saca al bot del canal de voz")
 }
 

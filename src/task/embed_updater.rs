@@ -1,6 +1,9 @@
 use std::{
     collections::HashMap,
-    sync::OnceLock,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        OnceLock,
+    },
     time::Duration,
 };
 
@@ -31,14 +34,24 @@ pub trait LiveEmbedRenderer: Send + Sync + 'static {
 }
 
 struct ActiveLive {
+    id: u64,
     owner: UserId,
     handle: JoinHandle<()>,
 }
 
 static ACTIVE_BY_SCOPE: OnceLock<Mutex<HashMap<LiveScope, ActiveLive>>> = OnceLock::new();
+static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
 fn active_map() -> &'static Mutex<HashMap<LiveScope, ActiveLive>> {
     ACTIVE_BY_SCOPE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+async fn cleanup_if_same(scope: LiveScope, id: u64) {
+    let mut map = active_map().lock().await;
+
+    if map.get(&scope).map(|active| active.id == id).unwrap_or(false) {
+        map.remove(&scope);
+    }
 }
 
 pub async fn stop(scope: LiveScope) -> bool {
@@ -59,6 +72,8 @@ pub async fn start<R>(
     token: String,
     every: Duration,
     frames: Vec<String>,
+    start_from: usize,
+    repeat: bool,
     renderer: R,
 ) -> Result<(), &'static str>
 where
@@ -67,6 +82,10 @@ where
     if frames.is_empty() {
         return Err("la animación no tiene frames");
     }
+
+    let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+    let frame_count = frames.len();
+    let start_index = start_from % frame_count;
 
     let mut map = active_map().lock().await;
 
@@ -80,17 +99,19 @@ where
         active.handle.abort();
     }
 
-    let frame_count = frames.len();
-
     let handle = tokio::spawn(async move {
-        let mut i = 0usize;
+        let mut index = start_index;
         let mut tick = interval(every);
 
         loop {
+            if !repeat && index >= frame_count {
+                break;
+            }
+
             tick.tick().await;
 
-            let frame = &frames[i % frame_count];
-            i = i.wrapping_add(1);
+            let frame = &frames[index % frame_count];
+            index = index.wrapping_add(1);
 
             let embed = renderer.render(frame);
             let edit = EditInteractionResponse::new().embed(embed);
@@ -104,8 +125,10 @@ where
                 break;
             }
         }
+
+        cleanup_if_same(scope, id).await;
     });
 
-    map.insert(scope, ActiveLive { owner, handle });
+    map.insert(scope, ActiveLive { id, owner, handle });
     Ok(())
 }

@@ -33,6 +33,11 @@ async fn main() {
         WORKSPACE.get().unwrap().folder_audio
     );
 
+    println!(
+        "Directorio de animaciones verificado en: {:?}",
+        WORKSPACE.get().unwrap().folder_animations
+    );
+
     let intents = GatewayIntents::GUILDS
         | GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES

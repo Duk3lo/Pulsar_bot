@@ -4,8 +4,8 @@ use serenity::model::id::ChannelId;
 use crate::ui::embeds;
 use serenity::builder::CreateMessage;
 
-pub fn register() -> CreateCommand {
-    CreateCommand::new("welcome").description("Ejecuta manualmente la bienvenida para un miembro")
+pub fn register_welcome(name: &'static str) -> CreateCommand {
+    CreateCommand::new(name).description("Ejecuta manualmente la bienvenida para un miembro")
 }
 pub async fn send_welcome_embed(ctx: &Context, member: &Member) {
     let channel_id = ChannelId::new(1495418149213048905);

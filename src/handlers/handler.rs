@@ -31,10 +31,10 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content.to_lowercase() == "!status" {
-            commands::status::run_manual_status(&ctx, &msg).await;
-        }
+    if msg.content.eq_ignore_ascii_case("!status") {
+        commands::status::run_manual_status(&ctx, &msg).await;
     }
+}
 
     async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
         welcome::handle_welcome(ctx, new_member).await;

@@ -6,9 +6,9 @@ use serenity::all::{
 };
 use serenity::builder::CreateMessage;
 
-use crate::commands::shared::opt_bool;
+use crate::commands::shared::opt_u64;
 use crate::{
-    commands::shared::register_live_command,
+    commands::shared::{opt_bool, register_status_command},
     status::metrics::collect_status,
     task::embed_updater::{self as live_status, LiveEmbedRenderer},
     ui::embeds,
@@ -23,42 +23,27 @@ impl LiveEmbedRenderer for StatusRenderer {
     }
 }
 
-const SPINNER_FRAMES: [&str; 4] = ["/", "-", "\\", "|"];
+static STATUS_FRAMES: [&str; 4] = ["|", "/", "-", "\\"];
 
-fn spinner_frames() -> Vec<String> {
-    SPINNER_FRAMES.iter().map(|s| s.to_string()).collect()
+fn spinner_frames_cached() -> &'static [&'static str] {
+    &STATUS_FRAMES
 }
 
-pub fn register_status() -> CreateCommand {
-    register_live_command("status", "Muestra información sobre el bot")
+pub fn register_status(name: &'static str) -> CreateCommand {
+    register_status_command(name)
 }
 
 pub async fn run_slash_status(ctx: &Context, command: &CommandInteraction) {
     let scope = live_status::LiveScope::from_command(command);
-    let stop = opt_bool(command, "stop");
     let update = opt_bool(command, "update");
-
-    if stop {
-        let stopped = live_status::stop(scope).await;
-
-        let content = if stopped {
-            "Actualización detenida."
-        } else {
-            "No había una actualización activa."
-        };
-
-        let data = CreateInteractionResponseMessage::new().content(content);
-        let builder = CreateInteractionResponse::Message(data);
-
-        if let Err(err) = command.create_response(&ctx.http, builder).await {
-            eprintln!("Error respondiendo stop: {err:?}");
-        }
-        return;
-    }
+    let duration_secs = opt_u64(command, "duration").unwrap_or(1);
 
     let renderer = StatusRenderer;
-    let embed = renderer.render(SPINNER_FRAMES[0]);
-    let data = CreateInteractionResponseMessage::new().add_embed(embed);
+    let frames = spinner_frames_cached();
+    let first_frame = frames.first().copied().unwrap_or("|");
+
+    let data = CreateInteractionResponseMessage::new()
+        .add_embed(renderer.render(first_frame));
     let builder = CreateInteractionResponse::Message(data);
 
     if let Err(err) = command.create_response(&ctx.http, builder).await {
@@ -67,13 +52,17 @@ pub async fn run_slash_status(ctx: &Context, command: &CommandInteraction) {
     }
 
     if update {
+        let frames_vec: Vec<String> = frames.iter().map(|s| (*s).to_string()).collect();
+
         if let Err(err) = live_status::start(
             ctx.clone(),
             scope,
             command.user.id,
             command.token.clone(),
-            Duration::from_secs(2),
-            spinner_frames(),
+            Duration::from_secs(duration_secs),
+            frames_vec,
+            1,
+            true,
             StatusRenderer,
         )
         .await
