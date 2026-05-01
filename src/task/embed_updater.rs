@@ -71,7 +71,7 @@ pub async fn start<R>(
     owner: UserId,
     token: String,
     every: Duration,
-    frames: Vec<String>,
+    frames: std::sync::Arc<[String]>,
     start_from: usize,
     repeat: bool,
     renderer: R,
@@ -99,6 +99,8 @@ where
         active.handle.abort();
     }
 
+    let frames_for_task = frames.clone();
+
     let handle = tokio::spawn(async move {
         let mut index = start_index;
         let mut tick = interval(every);
@@ -110,7 +112,7 @@ where
 
             tick.tick().await;
 
-            let frame = &frames[index % frame_count];
+            let frame = &frames_for_task[index % frame_count];
             index = index.wrapping_add(1);
 
             let embed = renderer.render(frame);

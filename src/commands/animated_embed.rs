@@ -1,10 +1,14 @@
-use std::time::Duration;
+use std::{
+    sync::{Arc, OnceLock},
+    time::Duration,
+};
 
 use serenity::all::{
     CommandInteraction, Context, CreateCommand, CreateInteractionResponse,
     CreateInteractionResponseMessage,
 };
 use serenity::builder::CreateEmbed;
+use tokio::sync::RwLock;
 
 use crate::commands::shared::opt_u64;
 use crate::{
@@ -23,17 +27,37 @@ impl LiveEmbedRenderer for AnimatedRenderer {
     }
 }
 
-fn load_animation_frames() -> Vec<String> {
+static ANIMATION_FRAMES: OnceLock<RwLock<Arc<[String]>>> = OnceLock::new();
+
+fn animation_store() -> &'static RwLock<Arc<[String]>> {
+    ANIMATION_FRAMES.get_or_init(|| {
+        RwLock::new(Arc::from(vec!["(sin animación)".to_string()]))
+    })
+}
+
+fn read_frames_from_disk() -> Arc<[String]> {
     let ws = WORKSPACE.get_or_init(|| {
         Workspace::load_workspace().expect("No se pudo cargar el workspace")
     });
 
     let anim_path = ws.get_default_animation_file();
 
-    load_frames_from_file(&anim_path).unwrap_or_else(|err| {
+    let frames = load_frames_from_file(&anim_path).unwrap_or_else(|err| {
         eprintln!("No se pudo leer la animación normal: {err:?}");
         vec!["(sin animación)".to_string()]
-    })
+    });
+
+    frames.into()
+}
+
+pub async fn reload_animation_frames() {
+    let frames = read_frames_from_disk();
+    let mut write = animation_store().write().await;
+    *write = frames;
+}
+
+async fn get_animation_frames() -> Arc<[String]> {
+    animation_store().read().await.clone()
 }
 
 pub fn register_animated_embed(name: &'static str) -> CreateCommand {
@@ -45,10 +69,10 @@ pub async fn run_slash_animated_embed(ctx: &Context, command: &CommandInteractio
     let repeat = opt_bool(&command, "loop");
     let duration_secs = opt_u64(command, "duration").unwrap_or(1);
 
-    let frames = load_animation_frames();
-    let first_frame = frames.first().map(|s| s.as_str()).unwrap_or("(sin animación)");
+    reload_animation_frames().await;
 
-    
+    let frames = get_animation_frames().await;
+    let first_frame = frames.first().map(|s| s.as_str()).unwrap_or("(sin animación)");
 
     let data = CreateInteractionResponseMessage::new()
         .add_embed(AnimatedRenderer.render(first_frame));

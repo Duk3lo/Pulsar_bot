@@ -64,23 +64,13 @@ impl Workspace {
         let path = self.get_default_animation_file();
 
         if !path.exists() {
-            let example = r#"┌───────────────┐
-│   frame one   │
-│   o     o     │
-│       ^       │
-└───────────────┘
+            let example = r#"|
 ---
-┌───────────────┐
-│   frame two   │
-│    o   o      │
-│      -        │
-└───────────────┘
+/
 ---
-┌───────────────┐
-│  frame three  │
-│   o     o     │
-│      ___      │
-└───────────────┘
+-
+---
+\
 "#;
 
             fs::write(&path, example)?;
